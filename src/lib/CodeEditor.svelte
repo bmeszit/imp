@@ -80,8 +80,19 @@
 <div class="container">
   <nav class="tabs">
     {#each openNames as name (name)}
-      <div class="tab" class:active={activeName === name} onclick={() => activeName = name}>
-        <input value={name} onchange={(e) => rename(name, e)} onclick={e => e.stopPropagation()} />
+      <div
+        class="tab"
+        class:active={activeName === name}
+        onclick={() => activeName = name}
+        onkeydown={(e) => e.key === 'Enter' && (activeName = name)}
+        role="button"
+        tabindex="0"
+      >
+        <input 
+          value={name} 
+          onchange={(e) => rename(name, e)} 
+          onclick={e => e.stopPropagation()} 
+        />
         <button onclick={(e) => remove(name, e)}>×</button>
       </div>
     {/each}
