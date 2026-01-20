@@ -5,9 +5,9 @@
   import AlgorithmCard from '$lib/AlgorithmCard.svelte';
 
   const algorithms = [
-    { id: 'binary-search', slug: 'binary-search' },
+    { id: 'search', slug: 'search' },
+    { id: 'sort', slug: 'sort' },
     { id: 'dijkstra', slug: 'dijkstra' },
-    { id: 'quick-sort', slug: 'quick-sort' }
   ];
 </script>
 
