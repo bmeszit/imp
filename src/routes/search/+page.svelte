@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, locale } from 'svelte-i18n';
   import { CodeEditor } from '$lib';
   import { createEditorManager } from '$lib';
   
@@ -13,12 +14,13 @@
 
 <article>
   <header class="page-header">
-    <h1>Search</h1>
+    <h1>{$t('algos.search.title')}</h1>
   </header>
+  <p>{$t('algos.search.desc')}</p>
   
   <div class="editor-section">
     <CodeEditor 
-      bind:openNames={editor.openNames} 
+      bind:openNames={editor.openNames}
       bind:activeName={editor.activeName} 
       onreset={() => editor.reset()} 
     />
