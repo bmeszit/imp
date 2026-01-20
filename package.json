@@ -25,6 +25,7 @@
 	"dependencies": {
 		"@codemirror/lang-python": "^6.2.1",
 		"codemirror": "^6.0.2",
+		"pyodide": "^0.29.1",
 		"svelte-i18n": "^4.0.1"
 	}
 }

@@ -6,25 +6,22 @@
   let { 
     openNames = $bindable([]), 
     activeName = $bindable(""),
-    onreset // New prop for the reset action
+    allFiles = $bindable({}), // <-- 1. ÚJ PROP: Ezt kapja meg a managertől
+    onreset 
   } = $props<{ 
     openNames: string[], 
     activeName: string, 
+    allFiles: Record<string, string>, // <-- Típus definíció
     onreset: () => void 
   }>();
 
-  let allFiles = $state<Record<string, string>>(
-    JSON.parse(localStorage.getItem("global_files_db") || "{}")
-  );
+  // <-- 2. TÖRLÉS: Az 'let allFiles = $state(...)' sor és az 
+  // 'localStorage.setItem' effect kikerült innen, mert a manager kezeli!
 
   let view: EditorView | null = null;
   let editingName = $state<string | null>(null);
 
   const activeContent = $derived(activeName ? allFiles[activeName] ?? "" : "");
-
-  $effect(() => {
-    localStorage.setItem("global_files_db", JSON.stringify(allFiles));
-  });
 
   function setupEditor(node: HTMLElement) {
     view = new EditorView({
@@ -35,6 +32,7 @@
         python(),
         EditorView.updateListener.of((u) => {
           if (u.docChanged && activeName) {
+            // Itt közvetlenül a managerben lévő adatot módosítja
             allFiles[activeName] = u.state.doc.toString();
           }
         }),
@@ -53,7 +51,7 @@
 
   function add() {
     const newName = `uj_file_${openNames.length + 1}.py`;
-    allFiles[newName] = "";
+    allFiles[newName] = ""; // A prop-ot módosítjuk
     openNames.push(newName);
     activeName = newName;
   }
@@ -78,7 +76,7 @@
     
     if (!newName || newName === oldName) return;
     
-    allFiles[newName] = allFiles[oldName];
+    allFiles[newName] = allFiles[oldName]; // Prop módosítás
     delete allFiles[oldName];
 
     const idx = openNames.indexOf(oldName);

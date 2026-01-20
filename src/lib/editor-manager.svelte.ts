@@ -1,6 +1,7 @@
 // src/lib/editor-manager.svelte.ts
 export function createEditorManager(pageId: string, defaultFiles: Record<string, string>) {
-    // 1. Állapotok inicializálása
+    
+    // 1. Tab nevek (ez marad)
     let openNames = $state<string[]>(
         JSON.parse(localStorage.getItem(`tabs_${pageId}`) || "[]")
     );
@@ -9,7 +10,12 @@ export function createEditorManager(pageId: string, defaultFiles: Record<string,
         localStorage.getItem(`active_tab_${pageId}`) || ""
     );
 
-    // 2. Automatikus mentés, ha változik a tabok listája vagy az aktív tab
+    // 2. ÚJ: A fájlok tartalma ide költözik a CodeEditorból!
+    let allFiles = $state<Record<string, string>>(
+        JSON.parse(localStorage.getItem("global_files_db") || "{}")
+    );
+
+    // 3. Mentések (ezek maradnak + az új allFiles mentése)
     $effect(() => {
         localStorage.setItem(`tabs_${pageId}`, JSON.stringify(openNames));
     });
@@ -18,12 +24,19 @@ export function createEditorManager(pageId: string, defaultFiles: Record<string,
         localStorage.setItem(`active_tab_${pageId}`, activeName);
     });
 
-    // 3. Inicializálás (onMount-szerű logika, de univerzálisan)
+    // ÚJ: ha a fájlok változnak, mentjük a globális adatbázisba
+    $effect(() => {
+        localStorage.setItem("global_files_db", JSON.stringify(allFiles));
+    });
+
+    // 4. ÚJ: Ez a legfontosabb sor a méréshez!
+    // Ez egy reaktív változó, ami mindig az aktuális fájl kódját adja vissza.
+    const activeCode = $derived(allFiles[activeName] || "");
+
     function init() {
         const db = JSON.parse(localStorage.getItem("global_files_db") || "{}");
         let changed = false;
 
-        // Ha nincs elmentett tab, betöltjük az alapértelmezetteket
         if (openNames.length === 0) {
             openNames = Object.keys(defaultFiles);
             activeName = openNames[0] || "";
@@ -37,6 +50,8 @@ export function createEditorManager(pageId: string, defaultFiles: Record<string,
         }
 
         if (changed) {
+            // Frissítjük a lokális állapunkat is az inicializáláskor
+            allFiles = db;
             localStorage.setItem("global_files_db", JSON.stringify(db));
         }
         
@@ -45,39 +60,36 @@ export function createEditorManager(pageId: string, defaultFiles: Record<string,
         }
     }
 
-    // 4. Reset funkció
     function reset() {
         const db = JSON.parse(localStorage.getItem("global_files_db") || "{}");
-
-        // Régi fájlok takarítása (opcionális, de ajánlott)
         openNames.forEach(name => delete db[name]);
-
-        // Alapértelmezettek visszaállítása
         for (const [name, content] of Object.entries(defaultFiles)) {
             db[name] = content;
         }
-
         localStorage.setItem("global_files_db", JSON.stringify(db));
         
-        // Tabok visszaállítása
         openNames = Object.keys(defaultFiles);
         activeName = openNames[0] || "";
 
-        // Mivel a CodeEditor belső állapota a localStorage-ra épül, 
-        // egy reload a legbiztosabb a teljes szinkronhoz
         window.location.reload();
     }
 
-    // Inicializálunk az indításkor
     init();
 
-    // Visszaadjuk az állapotokat és a reset függvényt
-    // Getter/setter-t használunk, hogy a bind: továbbra is működjön a komponensekkel
     return {
+        // Tabok kezelése
         get openNames() { return openNames; },
         set openNames(val) { openNames = val; },
         get activeName() { return activeName; },
         set activeName(val) { activeName = val; },
+        
+        // Fájlok tartalma (kell a CodeEditornak)
+        get allFiles() { return allFiles; },
+        set allFiles(val) { allFiles = val; },
+
+        // A méréshez szükséges aktuális kód
+        get activeCode() { return activeCode; },
+        
         reset
     };
 }
