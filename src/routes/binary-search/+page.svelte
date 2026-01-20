@@ -13,17 +13,6 @@
   </header>
 
   <div class="code-section">
-    <div class="code-header">
-      <span>binary_search.py</span>
-      <button 
-        class="copy-btn" 
-        onclick={() => navigator.clipboard.writeText(pythonCode)}
-      >
-        {$locale === 'en' ? 'Copy' : 'Másolás'}
-      </button>
-    </div>
-    
-    <!-- Pass the imported string to your component -->
     <CodeEditor code={pythonCode} />
   </div>
 
