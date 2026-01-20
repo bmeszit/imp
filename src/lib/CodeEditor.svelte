@@ -206,9 +206,8 @@
           border: none;
           background: transparent;
           color: #999;
-          font-size: 16px;
+          font-size: 20px;
           cursor: pointer;
-          padding: 2px 6px;
           &:hover { color: #d00; }
         }
       }
