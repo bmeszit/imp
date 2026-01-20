@@ -14,7 +14,6 @@
 <article>
   <header class="page-header">
     <h1>Search</h1>
-    <!-- You can remove the old button from here if you want it only inside the editor -->
   </header>
   
   <div class="editor-section">
