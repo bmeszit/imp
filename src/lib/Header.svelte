@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { t, locale } from 'svelte-i18n';
   import LocaleSwitcher from './LocaleSwitcher.svelte';
 </script>
 
 <header>
   <nav>
-    <a href="/" class="logo">AlgoLib</a>
+    <a href="/{$locale === 'en' ? '?lang=en' : ''}" class="logo">{$t('common.title')}</a>
     <LocaleSwitcher />
   </nav>
 </header>
@@ -14,7 +15,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 0rem;
+    padding: 3rem 0rem;
     border-bottom: 1px solid #eee;
   }
   .logo {

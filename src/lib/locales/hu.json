@@ -1,7 +1,6 @@
 {
   "common": {
-    "title": "Algoritmus Könyvtár",
-    "back": "Vissza a listához"
+    "title": "Algoritmus könyvtár"
   },
   "algos": {
     "binary-search": {

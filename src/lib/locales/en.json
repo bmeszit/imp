@@ -1,7 +1,6 @@
 {
   "common": {
-    "title": "Algorithm Library",
-    "back": "Back to list"
+    "title": "Algorithms library"
   },
   "algos": {
     "binary-search": {

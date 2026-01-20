@@ -11,9 +11,8 @@
   ];
 </script>
 
-<section style="padding: 2rem;">
-  <h1>{$t('common.title')}</h1>
-
+<section>
+  
   <AlgorithmGrid gap="2rem">
     {#each algorithms as algo}
       <AlgorithmCard
