@@ -13,7 +13,7 @@
   );
 
   let view: EditorView | null = null;
-  let editingName = $state<string | null>(null); // Tárolja, melyik tabot szerkesztjük éppen
+  let editingName = $state<string | null>(null);
 
   const activeContent = $derived(activeName ? allFiles[activeName] ?? "" : "");
 
@@ -114,10 +114,24 @@
   <div class="editor-body">
     {#if activeName}
       {#key activeName}
-        <div class="cm-wrapper" use:setupEditor></div>
+        <div 
+          class="cm-wrapper" 
+          use:setupEditor 
+          onclick={() => view?.focus()}
+          onkeydown={(e) => e.key === 'Enter' && view?.focus()}
+          role="textbox"
+          tabindex="0"
+          aria-label="Code Editor"
+        ></div>
       {/key}
     {:else}
-      <div class="empty">Nincs megnyitott fájl. Kattints a + gombra.</div>
+      <button 
+        class="empty" 
+        onclick={add}
+        type="button"
+      >
+        Nincs megnyitott fájl. Kattints a + gombra.
+      </button>
     {/if}
   </div>
 </div>
@@ -135,87 +149,113 @@
     .tabs-bar {
       display: flex;
       align-items: center;
-      background: #f5f5f5; // Szürkébb háttér a tab sávnak
+      background: #f5f5f5;
       border-bottom: 1px solid #ddd;
+      padding-top: 4px;
 
       .tab {
         display: flex;
         align-items: center;
-        padding: 6px 12px;
-        background: #fff;
+        justify-content: space-between; // Anchors children to opposite ends
+        padding: 0 8px 0 12px;
+        background: #eee;
         border: 1px solid #ddd;
         border-bottom: none;
         cursor: pointer;
-        min-width: 100px;
-        height: 28px;
-        max-width: 180px;
-        box-shadow: 0 -1px 2px rgba(0,0,0,0.03);
+        width: 160px; // Fixed width helps buttons stay aligned
+        height: 32px;
+        margin-right: 2px;
+        border-radius: 6px 6px 0 0;
 
         &.active {
           background: #fff;
-          border-bottom: 2px solid #3776ab; // Python-kék jelzés
+          border-bottom: 2px solid #3776ab;
+          z-index: 2;
           .tab-label { font-weight: 600; color: #000; }
         }
 
         .tab-label {
+          flex: 1; // Takes up all remaining space
           font-size: 13px;
           color: #666;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
           user-select: none;
+          margin-right: 4px;
         }
 
         input {
+          flex: 1;
           border: 1px solid #3776ab;
           background: #fff;
-          width: 100%;
           font-size: 13px;
           outline: none;
           padding: 0 2px;
+          width: 0; // Allows flex-grow to control width
         }
 
         .close-btn {
+          flex-shrink: 0; // Prevents the X from being squished
           border: none;
           background: transparent;
           color: #999;
-          font-size: 16px;
-          margin-left: 8px;
+          font-size: 18px;
+          line-height: 1;
           cursor: pointer;
-          &:hover { color: #d00; }
+          padding: 4px;
+          border-radius: 4px;
+          &:hover { 
+            color: #d00; 
+            background: rgba(0,0,0,0.05);
+          }
         }
       }
 
       .add-btn {
-        background: #fff;
-        border: 1px solid #ddd;
-        color: #3776ab;
-        border-radius: 4px;
-        width: 28px;
-        height: 28px;
-        margin-left: 4px;
+        background: transparent;
+        border: none;
+        color: #666;
+        font-size: 20px;
+        width: 30px;
+        height: 30px;
         cursor: pointer;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        &:hover { background: #f0f0f0; border-color: #ccc; }
+        &:hover { color: #3776ab; }
       }
     }
 
     .editor-body {
       flex: 1;
+      display: flex; // Added flex to ensure child fills height
+      flex-direction: column;
       overflow: hidden;
       background: #fff;
 
+      .cm-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        
+        // This targets CodeMirror's internal container
+        :global(.cm-editor) {
+          flex: 1;
+          outline: none !important;
+        }
+
+        // This ensures the scrollable area covers the whole container
+        :global(.cm-scroller) {
+          flex: 1;
+        }
+      }
+
       .empty {
+        flex: 1;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100%;
         color: #999;
         font-size: 14px;
+        cursor: pointer;
       }
     }
   }
