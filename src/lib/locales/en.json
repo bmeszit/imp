@@ -1,0 +1,20 @@
+{
+  "common": {
+    "title": "Algorithm Library",
+    "back": "Back to list"
+  },
+  "algos": {
+    "binary-search": {
+      "title": "Binary Search",
+      "desc": "Efficient search in sorted arrays."
+    },
+    "dijkstra": {
+      "title": "Dijkstra",
+      "desc": "Shortest path algorithm."
+    },
+    "quick-sort": {
+      "title": "Quick Sort",
+      "desc": "Divide-and-conquer sorting algorithm."
+    }
+  }
+}

@@ -1,33 +1,26 @@
-<!-- src/routes/+page.svelte -->
 <script lang="ts">
+  import { t } from 'svelte-i18n';
   import AlgorithmGrid from '$lib/AlgorithmGrid.svelte';
   import AlgorithmCard from '$lib/AlgorithmCard.svelte';
 
-  const algos = [
-    {
-      title: 'Binary Search',
-      description: 'Efficient search in sorted arrays.',
-      slug: 'binary-search'
-    },
-    {
-      title: 'Dijkstra',
-      description: 'Shortest path algorithm.',
-      slug: 'dijkstra'
-    },
-    {
-      title: 'Quick Sort',
-      description: 'Divide-and-conquer sorting algorithm.',
-      slug: 'quick-sort'
-    }
+  // We only keep the ID and Slug here
+  const algorithms = [
+    { id: 'binary-search', slug: 'binary-search' },
+    { id: 'dijkstra', slug: 'dijkstra' },
+    { id: 'quick-sort', slug: 'quick-sort' }
   ];
 </script>
 
-<AlgorithmGrid gap="2rem">
-  {#each algos as algo}
-    <AlgorithmCard
-      title={algo.title}
-      description={algo.description}
-      href="/{algo.slug}" 
-    />
-  {/each}
-</AlgorithmGrid>
+<section style="padding: 2rem;">
+  <h1>{$t('common.title')}</h1>
+
+  <AlgorithmGrid gap="2rem">
+    {#each algorithms as algo}
+      <AlgorithmCard
+        title={$t(`algos.${algo.id}.title`)}
+        description={$t(`algos.${algo.id}.desc`)}
+        href="/algorithms/{algo.slug}"
+      />
+    {/each}
+  </AlgorithmGrid>
+</section>

@@ -1,0 +1,20 @@
+{
+  "common": {
+    "title": "Algoritmus Könyvtár",
+    "back": "Vissza a listához"
+  },
+  "algos": {
+    "binary-search": {
+      "title": "Bináris keresés",
+      "desc": "Hatékony keresés rendezett tömbökben."
+    },
+    "dijkstra": {
+      "title": "Dijkstra-algoritmus",
+      "desc": "A legrövidebb út megkeresésére szolgáló algoritmus."
+    },
+    "quick-sort": {
+      "title": "Gyorsrendezés",
+      "desc": "Oszd meg és uralkodj elvű rendezőalgoritmus."
+    }
+  }
+}
