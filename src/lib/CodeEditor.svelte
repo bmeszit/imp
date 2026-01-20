@@ -239,14 +239,7 @@
         transition: all 0.2s;
 
         &:hover {
-          background: #e0e0e0;
           color: #f44336; // Subtle red hint for reset
-          border-color: #ccc;
-        }
-
-        &:active {
-          background: #d0d0d0;
-          transform: scale(0.95);
         }
       }
     }
