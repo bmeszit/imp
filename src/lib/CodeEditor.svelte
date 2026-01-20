@@ -32,12 +32,10 @@
 
 <style>
   .editor-wrapper {
-    border-radius: 8px;
     overflow: hidden;
     font-size: 14px;
     border: 1px solid #ddd; /* Light border for the code box */
     background-color: #fff;
-    margin-top: 1rem;
   }
 
   /* Basic styling for the gutter (line numbers) to make it look clean */

@@ -27,24 +27,9 @@
     <CodeEditor code={pythonCode} />
   </div>
 
-  <footer>
-    <!-- Back to home, preserving the ?lang=en parameter -->
-    <a href="../{$locale === 'en' ? '?lang=en' : ''}">
-      ← {$t('common.back')}
-    </a>
-  </footer>
 </article>
 
 <style>
-  .algo-page {
-    max-width: 850px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-
-  header {
-    margin-bottom: 2rem;
-  }
 
   h1 {
     font-size: 2.5rem;
@@ -81,19 +66,5 @@
 
   .copy-btn:hover {
     background: #f3f4f6;
-  }
-
-  footer {
-    margin-top: 3rem;
-  }
-
-  footer a {
-    color: #0366d6;
-    text-decoration: none;
-    font-weight: 500;
-  }
-
-  footer a:hover {
-    text-decoration: underline;
   }
 </style>
