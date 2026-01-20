@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CodeEditor from '$lib/CodeEditor.svelte';
+  import { CodeEditor } from '$lib';
   import { createEditorManager } from '$lib';
   
   import binarySearchCode from './binary-search.py?raw';
@@ -14,10 +14,14 @@
 <article>
   <header class="page-header">
     <h1>Search</h1>
-    <button class="reset-btn" onclick={() => editor.reset()}>Reset to Default</button>
+    <!-- You can remove the old button from here if you want it only inside the editor -->
   </header>
   
   <div class="editor-section">
-    <CodeEditor bind:openNames={editor.openNames} bind:activeName={editor.activeName} />
+    <CodeEditor 
+      bind:openNames={editor.openNames} 
+      bind:activeName={editor.activeName} 
+      onreset={() => editor.reset()} 
+    />
   </div>
 </article>

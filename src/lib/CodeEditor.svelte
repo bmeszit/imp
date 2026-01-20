@@ -5,8 +5,13 @@
 
   let { 
     openNames = $bindable([]), 
-    activeName = $bindable("") 
-  } = $props<{ openNames: string[], activeName: string }>();
+    activeName = $bindable(""),
+    onreset // New prop for the reset action
+  } = $props<{ 
+    openNames: string[], 
+    activeName: string, 
+    onreset: () => void 
+  }>();
 
   let allFiles = $state<Record<string, string>>(
     JSON.parse(localStorage.getItem("global_files_db") || "{}")
@@ -109,6 +114,14 @@
       </div>
     {/each}
     <button class="add-btn" onclick={add} title="Új fájl">+</button>
+
+    <!-- Reset button positioned to the far right -->
+    <button class="reset-action-btn" onclick={onreset} title="Visszaállítás alaphelyzetbe">
+      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"></path>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+    </button>
   </nav>
 
   <div class="editor-body">
@@ -125,11 +138,7 @@
         ></div>
       {/key}
     {:else}
-      <button 
-        class="empty" 
-        onclick={add}
-        type="button"
-      >
+      <button class="empty" onclick={add} type="button">
         Nincs megnyitott fájl. Kattints a + gombra.
       </button>
     {/if}
@@ -152,17 +161,18 @@
       background: #f5f5f5;
       border-bottom: 1px solid #ddd;
       padding-top: 4px;
+      padding-right: 4px; // Spacing for the reset button
 
       .tab {
         display: flex;
         align-items: center;
-        justify-content: space-between; // Anchors children to opposite ends
+        justify-content: space-between;
         padding: 0 8px 0 12px;
         background: #eee;
         border: 1px solid #ddd;
         border-bottom: none;
         cursor: pointer;
-        width: 160px; // Fixed width helps buttons stay aligned
+        width: 150px;
         height: 32px;
         margin-right: 2px;
         border-radius: 6px 6px 0 0;
@@ -175,40 +185,31 @@
         }
 
         .tab-label {
-          flex: 1; // Takes up all remaining space
-          font-size: 13px;
+          flex: 1;
+          font-size: 12px;
           color: #666;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
           user-select: none;
-          margin-right: 4px;
         }
 
         input {
           flex: 1;
           border: 1px solid #3776ab;
-          background: #fff;
-          font-size: 13px;
+          font-size: 12px;
           outline: none;
-          padding: 0 2px;
-          width: 0; // Allows flex-grow to control width
+          width: 0;
         }
 
         .close-btn {
-          flex-shrink: 0; // Prevents the X from being squished
           border: none;
           background: transparent;
           color: #999;
-          font-size: 18px;
-          line-height: 1;
+          font-size: 16px;
           cursor: pointer;
-          padding: 4px;
-          border-radius: 4px;
-          &:hover { 
-            color: #d00; 
-            background: rgba(0,0,0,0.05);
-          }
+          padding: 2px 6px;
+          &:hover { color: #d00; }
         }
       }
 
@@ -222,30 +223,46 @@
         cursor: pointer;
         &:hover { color: #3776ab; }
       }
+
+      .reset-action-btn {
+        margin-left: auto; // Pushes to the right
+        background: transparent;
+        border: 1px solid transparent;
+        color: #888;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.2s;
+
+        &:hover {
+          background: #e0e0e0;
+          color: #f44336; // Subtle red hint for reset
+          border-color: #ccc;
+        }
+
+        &:active {
+          background: #d0d0d0;
+          transform: scale(0.95);
+        }
+      }
     }
 
     .editor-body {
       flex: 1;
-      display: flex; // Added flex to ensure child fills height
+      display: flex;
       flex-direction: column;
       overflow: hidden;
-      background: #fff;
 
       .cm-wrapper {
         flex: 1;
         display: flex;
         flex-direction: column;
-        
-        // This targets CodeMirror's internal container
-        :global(.cm-editor) {
-          flex: 1;
-          outline: none !important;
-        }
-
-        // This ensures the scrollable area covers the whole container
-        :global(.cm-scroller) {
-          flex: 1;
-        }
+        :global(.cm-editor) { flex: 1; outline: none !important; }
+        :global(.cm-scroller) { flex: 1; }
       }
 
       .empty {
@@ -254,7 +271,8 @@
         justify-content: center;
         align-items: center;
         color: #999;
-        font-size: 14px;
+        border: none;
+        background: none;
         cursor: pointer;
       }
     }
