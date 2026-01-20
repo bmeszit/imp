@@ -43,7 +43,6 @@
   <p>{$t('algos.sort.desc')}</p>
   
   <div class="editor-section">
-    <!-- Megjegyzés: bekerült a bind:allFiles! -->
     <CodeEditor 
       bind:openNames={editor.openNames}
       bind:activeName={editor.activeName} 
@@ -52,9 +51,11 @@
     />
   </div>
 
+  <!-- Javított AlgorithmRunner hívás -->
   <AlgorithmRunner 
-    code={editor.activeCode} 
-    inputData={testList}
+    openNames={editor.openNames} 
+    allFiles={editor.allFiles}
+    bind:inputData={testList}
     pythonCall="rendezes(raw_data.to_py())"
   >
     <div class="controls">

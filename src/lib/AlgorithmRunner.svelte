@@ -1,36 +1,84 @@
 <script lang="ts">
   import { usePyodide } from './pyodide.svelte';
   
-  // Props: 
-  // - code: az editor.activeCode (ezt kapja meg)
-  // - inputData: a generált adat (pl. a lista)
-  // - pythonCall: a szöveg, ahogy hívjuk a függvényt (pl. "rendezes(raw_data.to_py())")
-  // - children: a generáló gombok helye
-  let { code, inputData, pythonCall, children } = $props();
+  // Props bővítése:
+  // - openNames: a nyitott tabok nevei (hogy tudjuk mit kell futtatni)
+  // - allFiles: az összes fájl tartalma (a kódok eléréséhez)
+  // - inputData: a generált adat (ezt bindoljuk, hogy a textarea szerkeszthesse)
+  // - pythonCall: a hívás sablon
+  // - children: generáló gombok
+  let { 
+    openNames, 
+    allFiles, 
+    inputData = $bindable(), 
+    pythonCall, 
+    children 
+  } = $props<{
+    openNames: string[],
+    allFiles: Record<string, string>,
+    inputData: any,
+    pythonCall: string,
+    children: any
+  }>();
 
   const py = usePyodide();
-  let time = $state<number | null>(null);
+  
+  // Eredmények tárolása: { "file.py": 1.234 }
+  let results = $state<Record<string, number | string>>({});
   let isExecuting = $state(false);
 
-  async function run() {
+  // Textarea kezelése: szinkronizáljuk az inputData-val
+  let textRepresentation = $state("");
+
+  // Ha kívülről (generátorral) változik az adat, frissítjük a szöveget
+  $effect(() => {
+    if (typeof inputData === 'object' && inputData !== null) {
+      // Ha a Search-féle objektumunk van {list, target}
+      const list = inputData.list || inputData; 
+      textRepresentation = Array.isArray(list) ? list.join(', ') : JSON.stringify(inputData);
+    } else {
+      textRepresentation = String(inputData);
+    }
+  });
+
+  // Ha a textarea-ban szerkesztjük, megpróbáljuk visszatölteni az adatba
+  function handleTextChange(e: Event) {
+    const val = (e.target as HTMLTextAreaElement).value;
+    const parsed = val.split(',').map(n => Number(n.trim())).filter(n => !isNaN(n));
+    
+    if (inputData && typeof inputData === 'object' && inputData.list) {
+      inputData.list = parsed;
+    } else {
+      inputData = parsed;
+    }
+  }
+
+  async function runAll() {
     isExecuting = true;
+    results = {}; // Reset
+    
     try {
       const instance = await py.init();
       
-      // Adat átadása JS -> Python
-      instance.globals.set('raw_data', inputData);
-      
-      const t0 = performance.now();
-      // A szerkesztett kód + a hívás lefuttatása
-      await instance.runPythonAsync(`
-${code}
-${pythonCall}
-      `);
-      const t1 = performance.now();
-      
-      time = t1 - t0;
+      for (const fileName of openNames) {
+        const code = allFiles[fileName];
+        if (!code) continue;
+
+        // Adat átadása
+        instance.globals.set('raw_data', inputData);
+        
+        const t0 = performance.now();
+        try {
+          await instance.runPythonAsync(`${code}\n${pythonCall}`);
+          const t1 = performance.now();
+          results[fileName] = (t1 - t0).toFixed(4);
+        } catch (err: any) {
+          results[fileName] = "Hiba";
+          console.error(`Hiba a(z) ${fileName} futtatásakor:`, err);
+        }
+      }
     } catch (e: any) {
-      alert("Python hiba: " + e.message);
+      alert("Pyodide hiba: " + e.message);
     } finally {
       isExecuting = false;
     }
@@ -38,27 +86,35 @@ ${pythonCall}
 </script>
 
 <div class="runner-container">
-  <div class="generator-slot">
-    {@render children()}
-  </div>
-
-  <div class="action-bar">
-    <button class="run-btn" onclick={run} disabled={isExecuting}>
-      {#if isExecuting} 
-        Homokóra... 
-      {:else if py.loading}
-        Python betöltése...
-      {:else}
-        Futtatás és mérés
-      {/if}
+  <div class="top-row">
+    <div class="generator-slot">
+      {@render children()}
+    </div>
+    <button class="run-btn" onclick={runAll} disabled={isExecuting || openNames.length === 0}>
+      {isExecuting ? 'Futás...' : 'Összes futtatása'}
     </button>
-
-    {#if time !== null}
-      <div class="result">
-        Utolsó futás: <strong>{time.toFixed(4)} ms</strong>
-      </div>
-    {/if}
   </div>
+
+  <div class="data-section">
+    <label for="data-input">Bemeneti adatok (szerkeszthető, vesszővel elválasztva):</label>
+    <textarea 
+      id="data-input"
+      value={textRepresentation} 
+      oninput={handleTextChange}
+      placeholder="1, 2, 3..."
+    ></textarea>
+  </div>
+
+  {#if Object.keys(results).length > 0}
+    <div class="results-grid">
+      {#each openNames as name}
+        <div class="result-card" class:has-error={results[name] === 'Hiba'}>
+          <span class="file-name">{name}</span>
+          <span class="time">{results[name] ? `${results[name]} ms` : '...'}</span>
+        </div>
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style lang="scss">
@@ -68,35 +124,94 @@ ${pythonCall}
     background: #f8f9fa;
     border: 1px solid #dee2e6;
     border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 
-    .generator-slot {
-      margin-bottom: 1rem;
+    .top-row {
       display: flex;
-      gap: 10px;
+      justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
-    .action-bar {
+    .data-section {
       display: flex;
-      align-items: center;
-      gap: 20px;
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      label {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #555;
+      }
+
+      textarea {
+        width: 100%;
+        height: 80px;
+        padding: 10px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 13px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+        background: #fff;
+      }
     }
 
     .run-btn {
       background: #3776ab;
       color: white;
       border: none;
-      padding: 8px 20px;
-      border-radius: 4px;
+      padding: 10px 24px;
+      border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
-      &:disabled { background: #6c757d; }
+      font-size: 1rem;
       &:hover:not(:disabled) { background: #2b5b87; }
+      &:disabled { background: #adb5bd; cursor: not-allowed; }
     }
 
-    .result {
-      font-family: monospace;
-      font-size: 1.1rem;
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+
+      .result-card {
+        background: #fff;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+        &.has-error {
+          border-color: #ffc107;
+          background: #fff8e1;
+          .time { color: #d32f2f; }
+        }
+
+        .file-name {
+          font-size: 0.75rem;
+          color: #666;
+          margin-bottom: 4px;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+          width: 100%;
+          text-align: center;
+        }
+
+        .time {
+          font-weight: bold;
+          font-family: monospace;
+          font-size: 1rem;
+          color: #2e7d32;
+        }
+      }
     }
   }
 </style>

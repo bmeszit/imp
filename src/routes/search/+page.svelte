@@ -6,30 +6,34 @@
   import binarySearchCode from './binary-search.py?raw';
   import linearSearchCode from './linear-search.py?raw';
 
+  // 1. Manager inicializálása
   const editor = createEditorManager("search-algorithms", {
     "binary-search.py": binarySearchCode,
     "linear-search.py": linearSearchCode
   });
 
-  // Állapotok a generáláshoz
-  let testList = $state<number[]>([]);
-  let target = $state<number>(0);
+  // 2. Összevont állapot az AlgorithmRunner számára
+  let testData = $state({
+    list: [] as number[],
+    target: 0
+  });
+
   let size = $state(1000);
 
-  // Generátor: Mindig növekvő listát gyártunk (bináris keresés miatt)
+  // Generátor: Mindig növekvő listát gyártunk
   function generateSortedData() {
     // Páros számok listája: 0, 2, 4, 6, ...
-    testList = Array.from({length: size}, (_, i) => i * 2);
+    testData.list = Array.from({length: size}, (_, i) => i * 2);
   }
 
   // Gyors gombok a célpont beállításához
   function setTarget(type: 'start' | 'end' | 'middle' | 'missing') {
-    if (testList.length === 0) generateSortedData();
+    if (testData.list.length === 0) generateSortedData();
     
-    if (type === 'start') target = testList[0];
-    if (type === 'end') target = testList[testList.length - 1];
-    if (type === 'middle') target = testList[Math.floor(testList.length / 2)];
-    if (type === 'missing') target = testList[testList.length - 1] + 1; // Egy páratlan szám biztos hiányzik
+    if (type === 'start') testData.target = testData.list[0];
+    if (type === 'end') testData.target = testData.list[testData.list.length - 1];
+    if (type === 'middle') testData.target = testData.list[Math.floor(testData.list.length / 2)];
+    if (type === 'missing') testData.target = testData.list[testData.list.length - 1] + 1;
   }
 </script>
 
@@ -49,8 +53,9 @@
   </div>
 
   <AlgorithmRunner 
-    code={editor.activeCode} 
-    inputData={{ list: testList, target: target }}
+    openNames={editor.openNames} 
+    allFiles={editor.allFiles}
+    bind:inputData={testData} 
     pythonCall="kereses(raw_data.list.to_py(), raw_data.target)"
   >
     <div class="search-controls">
@@ -62,7 +67,7 @@
         
         <label>
           {$t('algos.common.target') || 'Keresett érték'}:
-          <input type="number" bind:value={target} />
+          <input type="number" bind:value={testData.target} />
         </label>
       </div>
 
@@ -74,9 +79,9 @@
         <button onclick={() => setTarget('missing')}>Nincs a listában</button>
       </div>
 
-      {#if testList.length > 0}
+      {#if testData.list.length > 0}
         <div class="info">
-          Tartomány: {testList[0]} - {testList[testList.length - 1]} (Csak páros számok)
+          Tartomány: {testData.list[0]} - {testData.list[testData.list.length - 1]} (Csak páros számok)
         </div>
       {/if}
     </div>
