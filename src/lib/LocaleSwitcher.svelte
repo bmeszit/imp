@@ -1,34 +1,23 @@
 <script lang="ts">
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
   import { locale } from 'svelte-i18n';
-
-  const languages = [
-    { code: 'en', label: 'English', flag: '🇬🇧' },
-    { code: 'hu', label: 'Magyar', flag: '🇭🇺' }
-  ];
 
   function updateLocale(event: Event) {
     const target = event.target as HTMLSelectElement;
-    $locale = target.value;
+    const newLang = target.value;
+
+    const newUrl = new URL($page.url);
+    if (newLang === 'en') {
+      newUrl.searchParams.set('lang', 'en');
+    } else {
+      newUrl.searchParams.delete('lang');
+    }
+    goto(newUrl.pathname + newUrl.search, { keepFocus: true, noScroll: true });
   }
 </script>
 
-<div class="switcher">
-  <select value={$locale} onchange={updateLocale}>
-    {#each languages as lang}
-      <option value={lang.code}>
-        {lang.flag} {lang.label}
-      </option>
-    {/each}
-  </select>
-</div>
-
-<style>
-  select {
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    background: white;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-</style>
+<select value={$locale} onchange={updateLocale}>
+  <option value="hu">🇭🇺 Magyar</option>
+  <option value="en">🇬🇧 English</option>
+</select>

@@ -1,8 +1,11 @@
-// src/routes/+layout.ts
-import { browser } from '$app/environment';
-import '../lib/i18n'; 
-import { waitLocale } from 'svelte-i18n';
+import { setupI18n } from '$lib/i18n';
 
-export const load = async () => {
-  await waitLocale();
+// This is the secret to NO FLICKERING
+export const ssr = false; 
+export const prerender = true;
+
+export const load = ({ url }) => {
+  const lang = url.searchParams.get('lang') || 'hu';
+  setupI18n(lang);
+  return { lang };
 };

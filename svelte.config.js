@@ -7,12 +7,16 @@ const config = {
   kit: {
     adapter: adapter({
       pages: 'build',
-      assets: 'build'
+      assets: 'build',
+      fallback: '404.html' 
     }),
     paths: {
       base: process.env.BASE_PATH ?? ''
     },
-    prerender: { entries: ['*'] }
+    prerender: { 
+      entries: ['*'] 
+    }
   }
 };
+
 export default config;

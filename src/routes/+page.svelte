@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from 'svelte-i18n';
+  import { t, locale } from 'svelte-i18n';
+  import { base } from '$app/paths';
   import AlgorithmGrid from '$lib/AlgorithmGrid.svelte';
   import AlgorithmCard from '$lib/AlgorithmCard.svelte';
 
-  // We only keep the ID and Slug here
   const algorithms = [
     { id: 'binary-search', slug: 'binary-search' },
     { id: 'dijkstra', slug: 'dijkstra' },
@@ -19,7 +19,7 @@
       <AlgorithmCard
         title={$t(`algos.${algo.id}.title`)}
         description={$t(`algos.${algo.id}.desc`)}
-        href="/{algo.slug}"
+        href="{algo.slug}{$locale === 'en' ? '?lang=en' : ''}"
       />
     {/each}
   </AlgorithmGrid>
