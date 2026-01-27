@@ -5,10 +5,10 @@ function key(pageId: PageId): string { return `pageCode:${pageId}`; }
 export function createCodeRepo(defaults: Pages) {
   let pages = $state<Pages>({});
   for (const pageId in defaults) {
-    const raw = localStorage.getItem(key(pageId));
-    pages[pageId] = raw
+    const raw = localStorage.getItem(key(pageId as PageId));
+    pages[pageId as PageId] = raw
       ? { ...defaults[pageId as PageId], ...JSON.parse(raw) }
-      : { ...defaults[pageId as PageId]};
+      : { ...defaults[pageId as PageId] };
   }
 
   function save(pageId: PageId): void {
@@ -16,7 +16,7 @@ export function createCodeRepo(defaults: Pages) {
   }
 
   function list(pageId: PageId): Filename[] {
-    return Object.keys(pages[pageId]);
+    return Object.keys(pages[pageId]) as Filename[];
   }
 
   function get(pageId: PageId, filename: Filename): string {
@@ -37,10 +37,21 @@ export function createCodeRepo(defaults: Pages) {
     save(pageId);
   }
 
+  function rename(pageId: PageId, from: Filename, to: Filename): boolean {
+    if (from === to) return true;
+    const page = pages[pageId];
+    if (page[from] === undefined) return false;
+    if (page[to] !== undefined) return false;
+    page[to] = page[from];
+    delete page[from];
+    save(pageId);
+    return true;
+  }
+
   function reset(pageId: PageId): void {
     pages[pageId] = { ...defaults[pageId] };
     save(pageId);
   }
 
-  return { pages, list, get, set, del, reset };
+  return { pages, list, get, set, del, rename, reset };
 }
