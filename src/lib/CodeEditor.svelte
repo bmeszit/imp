@@ -3,8 +3,9 @@
   import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from "@codemirror/view";
   import { EditorState } from "@codemirror/state";
   import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-   import { bracketMatching } from "@codemirror/language";
+  import { bracketMatching } from "@codemirror/language";
   import { python } from "@codemirror/lang-python";
+  import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
 
   const { value, onchange = () => {} } = $props();
 
@@ -17,6 +18,7 @@
       extensions: [
         lineNumbers(),
         highlightActiveLine(),
+        syntaxHighlighting(defaultHighlightStyle),
         drawSelection(),
         history(),
         bracketMatching(),
