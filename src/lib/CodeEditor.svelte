@@ -1,270 +1,100 @@
+<!-- CodeEditor.svelte (Svelte 5 + CodeMirror 6) -->
 <script lang="ts">
-  import { EditorView, basicSetup } from "codemirror";
-  import { python } from "@codemirror/lang-python";
-  import { tick } from "svelte";
+  import { onMount, onDestroy } from "svelte"
 
-  let { 
-    openNames = $bindable([]), 
-    activeName = $bindable(""),
-    allFiles = $bindable({}), // <-- 1. ÚJ PROP: Ezt kapja meg a managertől
-    onreset 
-  } = $props<{ 
-    openNames: string[], 
-    activeName: string, 
-    allFiles: Record<string, string>, // <-- Típus definíció
-    onreset: () => void 
-  }>();
+  import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from "@codemirror/view"
+  import { EditorState, Compartment } from "@codemirror/state"
+  import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands"
+  import { bracketMatching } from "@codemirror/language"
+  import { python } from "@codemirror/lang-python"
 
-  // <-- 2. TÖRLÉS: Az 'let allFiles = $state(...)' sor és az 
-  // 'localStorage.setItem' effect kikerült innen, mert a manager kezeli!
-
-  let view: EditorView | null = null;
-  let editingName = $state<string | null>(null);
-
-  const activeContent = $derived(activeName ? allFiles[activeName] ?? "" : "");
-
-  function setupEditor(node: HTMLElement) {
-    view = new EditorView({
-      parent: node,
-      doc: activeContent,
-      extensions: [
-        basicSetup,
-        python(),
-        EditorView.updateListener.of((u) => {
-          if (u.docChanged && activeName) {
-            // Itt közvetlenül a managerben lévő adatot módosítja
-            allFiles[activeName] = u.state.doc.toString();
-          }
-        }),
-      ],
-    });
-    return { destroy: () => view?.destroy() };
+  type Props = {
+    value: string
+    onChange?: (next: string) => void
+    readOnly?: boolean
+    extraExtensions?: any[]
   }
+
+  const {
+    value,
+    onChange = () => {},
+    readOnly = false,
+    extraExtensions = []
+  } = $props() as Props
+
+  let host: HTMLDivElement | null = null
+  let view: EditorView | null = null
+
+  const ro = new Compartment()
+  const extras = new Compartment()
+
+  function roExt(v: boolean) {
+    return EditorState.readOnly.of(v)
+  }
+
+  function makeState(doc: string) {
+    return EditorState.create({
+      doc,
+      extensions: [
+        lineNumbers(),
+        highlightActiveLine(),
+        drawSelection(),
+        history(),
+        bracketMatching(),
+        python(),
+        keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+        EditorView.updateListener.of((u) => {
+          if (!u.docChanged) return
+          const next = u.state.doc.toString()
+          if (next !== value) onChange(next)
+        }),
+        ro.of(roExt(readOnly)),
+        extras.of(extraExtensions)
+      ]
+    })
+  }
+
+  onMount(() => {
+    if (!host) return
+    view = new EditorView({
+      state: makeState(value ?? ""),
+      parent: host
+    })
+  })
+
+  onDestroy(() => {
+    view?.destroy()
+    view = null
+  })
 
   $effect(() => {
-    if (view && activeName && view.state.doc.toString() !== activeContent) {
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: activeContent },
-      });
-    }
-  });
+    if (!view) return
+    const next = value ?? ""
+    const cur = view.state.doc.toString()
+    if (next === cur) return
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: next }
+    })
+  })
 
-  function add() {
-    const newName = `uj_file_${openNames.length + 1}.py`;
-    allFiles[newName] = ""; // A prop-ot módosítjuk
-    openNames.push(newName);
-    activeName = newName;
-  }
+  $effect(() => {
+    if (!view) return
+    view.dispatch({ effects: ro.reconfigure(roExt(readOnly)) })
+  })
 
-  function remove(name: string, e: MouseEvent) {
-    e.stopPropagation();
-    openNames = openNames.filter(n => n !== name);
-    if (activeName === name) activeName = openNames[0] || "";
-  }
-
-  async function startEditing(name: string) {
-    editingName = name;
-    await tick();
-    const input = document.querySelector('.tab-input-active') as HTMLInputElement;
-    input?.focus();
-    input?.select();
-  }
-
-  function finishRename(oldName: string, e: Event) {
-    const newName = (e.target as HTMLInputElement).value.trim();
-    editingName = null;
-    
-    if (!newName || newName === oldName) return;
-    
-    allFiles[newName] = allFiles[oldName]; // Prop módosítás
-    delete allFiles[oldName];
-
-    const idx = openNames.indexOf(oldName);
-    openNames[idx] = newName;
-    if (activeName === oldName) activeName = newName;
-  }
+  $effect(() => {
+    if (!view) return
+    view.dispatch({ effects: extras.reconfigure(extraExtensions) })
+  })
 </script>
 
-<div class="container">
-  <nav class="tabs-bar">
-    {#each openNames as name (name)}
-      <div
-        class="tab"
-        class:active={activeName === name}
-        onclick={() => activeName = name}
-        ondblclick={() => startEditing(name)}
-        onkeydown={(e) => e.key === 'Enter' && (activeName = name)}
-        role="button"
-        tabindex="0"
-      >
-        {#if editingName === name}
-          <input 
-            class="tab-input-active"
-            value={name} 
-            onblur={(e) => finishRename(name, e)}
-            onkeydown={(e) => e.key === 'Enter' && finishRename(name, e)}
-            onclick={e => e.stopPropagation()} 
-          />
-        {:else}
-          <span class="tab-label">{name}</span>
-        {/if}
-        <button class="close-btn" onclick={(e) => remove(name, e)}>×</button>
-      </div>
-    {/each}
-    <button class="add-btn" onclick={add} title="Új fájl">+</button>
+<div class="host" bind:this={host}></div>
 
-    <!-- Reset button positioned to the far right -->
-    <button class="reset-action-btn" onclick={onreset} title="Visszaállítás alaphelyzetbe">
-      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M23 4v6h-6"></path>
-        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-      </svg>
-    </button>
-  </nav>
-
-  <div class="editor-body">
-    {#if activeName}
-      {#key activeName}
-        <div 
-          class="cm-wrapper" 
-          use:setupEditor 
-          onclick={() => view?.focus()}
-          onkeydown={(e) => e.key === 'Enter' && view?.focus()}
-          role="textbox"
-          tabindex="0"
-          aria-label="Code Editor"
-        ></div>
-      {/key}
-    {:else}
-      <button class="empty" onclick={add} type="button">
-        Nincs megnyitott fájl. Kattints a + gombra.
-      </button>
-    {/if}
-  </div>
-</div>
-
-<style lang="scss">
-  .container {
-    display: flex;
-    flex-direction: column;
-    height: 500px;
-    border: 1px solid #ddd;
-    background: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    font-family: Roboto, sans-serif;
-
-    .tabs-bar {
-      display: flex;
-      align-items: center;
-      background: #f5f5f5;
-      border-bottom: 1px solid #ddd;
-      padding-top: 4px;
-      padding-right: 4px; // Spacing for the reset button
-
-      .tab {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 8px 0 12px;
-        background: #eee;
-        border: 1px solid #ddd;
-        border-bottom: none;
-        cursor: pointer;
-        width: 150px;
-        height: 32px;
-        margin-right: 2px;
-        border-radius: 6px 6px 0 0;
-
-        &.active {
-          background: #fff;
-          border-bottom: 2px solid #3776ab;
-          z-index: 2;
-          .tab-label { font-weight: 600; color: #000; }
-        }
-
-        .tab-label {
-          flex: 1;
-          font-size: 12px;
-          color: #666;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          user-select: none;
-        }
-
-        input {
-          flex: 1;
-          border: 1px solid #3776ab;
-          font-size: 12px;
-          outline: none;
-          width: 0;
-        }
-
-        .close-btn {
-          border: none;
-          background: transparent;
-          color: #999;
-          font-size: 20px;
-          cursor: pointer;
-          &:hover { color: #d00; }
-        }
-      }
-
-      .add-btn {
-        background: transparent;
-        border: none;
-        color: #666;
-        font-size: 20px;
-        width: 30px;
-        height: 30px;
-        cursor: pointer;
-        &:hover { color: #3776ab; }
-      }
-
-      .reset-action-btn {
-        margin-left: auto; // Pushes to the right
-        background: transparent;
-        border: 1px solid transparent;
-        color: #888;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: all 0.2s;
-
-        &:hover {
-          color: #f44336; // Subtle red hint for reset
-        }
-      }
-    }
-
-    .editor-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-
-      .cm-wrapper {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        :global(.cm-editor) { flex: 1; outline: none !important; }
-        :global(.cm-scroller) { flex: 1; }
-      }
-
-      .empty {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: #999;
-        border: none;
-        background: none;
-        cursor: pointer;
-      }
-    }
+<style>
+  .host { width: 100%; height: 100%; }
+  :global(.cm-editor) { height: 100%; }
+  :global(.cm-scroller) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      "Liberation Mono", "Courier New", monospace;
   }
 </style>
