@@ -55,26 +55,26 @@
   })
 
   onDestroy(() => {
-    view?.destroy()
-    view = null
+    view?.destroy();
+    view = null;
   })
 
   // parent -> editor sync (tab switch / external update)
   $effect(() => {
-    if (!view) return
-    const next = value ?? ""
-    const cur = view.state.doc.toString()
-    if (next === cur) return
+    if (!view) return;
+    const next = value ?? "";
+    const cur = view.state.doc.toString();
+    if (next === cur) return;
     view.dispatch({
       changes: { from: 0, to: view.state.doc.length, insert: next }
-    })
+    });
   })
 
   // extraExtensions sync
   $effect(() => {
     if (!view) return
     view.dispatch({ effects: extras.reconfigure(extraExtensions) })
-  })
+  });
 </script>
 
 <div class="host" bind:this={host}></div>
