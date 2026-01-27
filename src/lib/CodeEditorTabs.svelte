@@ -162,6 +162,7 @@
       {/each}
       <button class="new" type="button" onclick={addFile}>+ New</button>
     </div>
+    <button class="reset desktopOnly" type="button" onclick={resetPage} disabled={!repo.reset}>Reset</button>
   </div>
 
   {#if menuOpen}
@@ -389,8 +390,11 @@
 
   .empty { padding: 12px; opacity: 0.7; }
 
+  .desktopOnly { display: inline-flex; }
+
   @media (max-width: 640px) {
     .tabs { display: none; }
     .mobile { display: flex; }
+    .desktopOnly { display: none; }
   }
 </style>
