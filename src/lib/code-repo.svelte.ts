@@ -1,6 +1,4 @@
-export type PageId = string
-export type Filename = string
-export type Pages = Record<PageId, Record<Filename, string>>
+import type { PageId, Filename, Pages } from "$lib";
 
 function key(pageId: PageId): string { return `pageCode:${pageId}`; }
 

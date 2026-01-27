@@ -1,40 +1,10 @@
 <script lang="ts">
   import { t } from 'svelte-i18n';
-  import { CodeEditor, CodeEditorTabs, createCodeRepo } from '$lib';
-  import AlgorithmRunner from '$lib/AlgorithmRunner.svelte';
-  
-  import binarySearchCode from './binary-search.py?raw';
-  import linearSearchCode from './linear-search.py?raw';
+  import { CodeEditorTabs } from '$lib';
+  import { getContext } from "svelte";
 
-  // 1. Manager inicializálása
-  const editor = createCodeRepo("search-algorithms", {
-    "binary-search.py": binarySearchCode,
-    "linear-search.py": linearSearchCode
-  });
+  const codeRepo = getContext("codeRepo");
 
-  // 2. Összevont állapot az AlgorithmRunner számára
-  let testData = $state({
-    list: [] as number[],
-    target: 0
-  });
-
-  let size = $state(1000);
-
-  // Generátor: Mindig növekvő listát gyártunk
-  function generateSortedData() {
-    // Páros számok listája: 0, 2, 4, 6, ...
-    testData.list = Array.from({length: size}, (_, i) => i * 2);
-  }
-
-  // Gyors gombok a célpont beállításához
-  function setTarget(type: 'start' | 'end' | 'middle' | 'missing') {
-    if (testData.list.length === 0) generateSortedData();
-    
-    if (type === 'start') testData.target = testData.list[0];
-    if (type === 'end') testData.target = testData.list[testData.list.length - 1];
-    if (type === 'middle') testData.target = testData.list[Math.floor(testData.list.length / 2)];
-    if (type === 'missing') testData.target = testData.list[testData.list.length - 1] + 1;
-  }
 </script>
 
 <article>
@@ -44,48 +14,8 @@
   <p>{$t('algos.search.desc')}</p>
   
   <div class="editor-section">
-    <CodeEditor 
-      bind:openNames={editor.openNames}
-      bind:activeName={editor.activeName} 
-      bind:allFiles={editor.allFiles}
-      onreset={() => editor.reset()} 
-    />
+    <CodeEditorTabs pageId="search" repo={codeRepo} />
   </div>
-
-  <AlgorithmRunner 
-    openNames={editor.openNames} 
-    allFiles={editor.allFiles}
-    bind:inputData={testData} 
-    pythonCall="kereses(raw_data.list.to_py(), raw_data.target)"
-  >
-    <div class="search-controls">
-      <div class="config-row">
-        <label>
-          {$t('algos.common.size') || 'Lista mérete'}:
-          <input type="number" bind:value={size} onchange={generateSortedData} />
-        </label>
-        
-        <label>
-          {$t('algos.common.target') || 'Keresett érték'}:
-          <input type="number" bind:value={testData.target} />
-        </label>
-      </div>
-
-      <div class="preset-row">
-        <span>Beállítás:</span>
-        <button onclick={() => setTarget('start')}>Lista eleje</button>
-        <button onclick={() => setTarget('middle')}>Lista közepe</button>
-        <button onclick={() => setTarget('end')}>Lista vége</button>
-        <button onclick={() => setTarget('missing')}>Nincs a listában</button>
-      </div>
-
-      {#if testData.list.length > 0}
-        <div class="info">
-          Tartomány: {testData.list[0]} - {testData.list[testData.list.length - 1]} (Csak páros számok)
-        </div>
-      {/if}
-    </div>
-  </AlgorithmRunner>
 </article>
 
 <style lang="scss">

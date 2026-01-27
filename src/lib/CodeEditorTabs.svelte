@@ -1,20 +1,7 @@
 <script lang="ts">
   import CodeEditor from "./CodeEditor.svelte";
 
-  type Repo = {
-    list: (pageId: string) => string[];
-    get: (pageId: string, filename: string) => string;
-    set: (pageId: string, filename: string, content: string) => void;
-    del: (pageId: string, filename: string) => void;
-    reset?: (pageId: string) => void;
-  };
-
-  type Props = {
-    pageId: string;
-    repo: Repo;
-  };
-
-  const { pageId, repo } = $props() as Props;
+  const { pageId, repo } = $props();
 
   let active = $state<string>("");
   let menuOpen = $state<boolean>(false);
