@@ -6,18 +6,24 @@
   let active = $state<string>("");
   let menuOpen = $state<boolean>(false);
 
-  let tabs = $derived(repo.list(pageId));
-  let content = $derived(active ? repo.get(pageId, active) : "");
+  let tabs = $state<string[]>([]);
+  let content = $state<string>("");
 
   $effect(() => {
+    tabs = repo.list(pageId);
+
     if (tabs.length === 0) {
       active = "";
       menuOpen = false;
       return;
     }
+
     if (active === "" || !tabs.includes(active)) active = tabs[0];
   });
 
+  $effect(() => {
+    content = active ? repo.get(pageId, active) : "";
+  });
 
   function nextNewName(): string {
     let i = 1;

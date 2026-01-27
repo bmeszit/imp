@@ -5,3 +5,4 @@ export { default as CodeEditor } from './CodeEditor.svelte';
 export { default as CodeEditorTabs } from './CodeEditorTabs.svelte';
 export { createCodeRepo } from './code-repo.svelte.ts';
 export { defaultCode } from './code/load-code.ts';
+export *  from './types.ts';
