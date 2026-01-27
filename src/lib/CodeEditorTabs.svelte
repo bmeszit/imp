@@ -6,6 +6,9 @@
   let active = $state<string>("");
   let menuOpen = $state<boolean>(false);
 
+  let renaming = $state<string>("");
+  let renameValue = $state<string>("");
+
   let tabs = $derived(repo.list(pageId));
   let content = $derived(active ? repo.get(pageId, active) : "");
 
@@ -13,9 +16,11 @@
     if (tabs.length === 0) {
       active = "";
       menuOpen = false;
+      renaming = "";
       return;
     }
     if (active === "" || !tabs.includes(active)) active = tabs[0];
+    if (renaming && !tabs.includes(renaming)) renaming = "";
   });
 
   function nextNewName(): string {
@@ -37,16 +42,47 @@
   function closeFile(name: string): void {
     repo.del(pageId, name);
     if (active === name) active = "";
+    if (renaming === name) renaming = "";
   }
 
   function resetPage(): void {
     repo.reset?.(pageId);
     menuOpen = false;
+    renaming = "";
   }
 
   function onEdit(next: string): void {
     if (!active) return;
     repo.set(pageId, active, next);
+  }
+
+  function beginRename(name: string): void {
+    renaming = name;
+    renameValue = name;
+  }
+
+  function cancelRename(): void {
+    renaming = "";
+    renameValue = "";
+  }
+
+  function commitRename(): void {
+    if (!renaming) return;
+    const from = renaming;
+    const to = renameValue.trim();
+    if (to === "" || to === from) {
+      cancelRename();
+      return;
+    }
+    const ok = repo.rename?.(pageId, from, to);
+    if (!ok) return;
+    if (active === from) active = to;
+    renaming = "";
+  }
+
+  function onRenameMenu(e: MouseEvent, name: string): void {
+    e.preventDefault();
+    beginRename(name);
   }
 </script>
 
@@ -60,7 +96,29 @@
     <div class="tabs">
       {#each tabs as t (t)}
         <div class="tab" data-active={t === active}>
-          <button class="tabbtn" type="button" onclick={() => (active = t)}>{t}</button>
+          {#if renaming === t}
+            <input
+              class="rename"
+              value={renameValue}
+              autofocus
+              oninput={(e) => (renameValue = (e.currentTarget as HTMLInputElement).value)}
+              onkeydown={(e) => {
+                if (e.key === "Enter") commitRename();
+                if (e.key === "Escape") cancelRename();
+              }}
+              onblur={commitRename}
+            />
+          {:else}
+            <button
+              class="tabbtn"
+              type="button"
+              onclick={() => (active = t)}
+              ondblclick={() => beginRename(t)}
+              oncontextmenu={(e) => onRenameMenu(e, t)}
+            >
+              {t}
+            </button>
+          {/if}
           <button class="close" type="button" aria-label="Close" onclick={() => closeFile(t)}>×</button>
         </div>
       {/each}
@@ -78,7 +136,29 @@
       <div class="menuList">
         {#each tabs as t (t)}
           <div class="row" data-active={t === active}>
-            <button class="pick" type="button" onclick={() => (active = t, menuOpen = false)}>{t}</button>
+            {#if renaming === t}
+              <input
+                class="rename pick"
+                value={renameValue}
+                autofocus
+                oninput={(e) => (renameValue = (e.currentTarget as HTMLInputElement).value)}
+                onkeydown={(e) => {
+                  if (e.key === "Enter") commitRename();
+                  if (e.key === "Escape") cancelRename();
+                }}
+                onblur={commitRename}
+              />
+            {:else}
+              <button
+                class="pick"
+                type="button"
+                onclick={() => (active = t, menuOpen = false)}
+                ondblclick={() => beginRename(t)}
+                oncontextmenu={(e) => onRenameMenu(e, t)}
+              >
+                {t}
+              </button>
+            {/if}
             <button class="close" type="button" aria-label="Close" onclick={() => closeFile(t)}>×</button>
           </div>
         {/each}
@@ -170,6 +250,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .rename {
+    border: 0;
+    background: transparent;
+    padding: 6px 10px;
+    max-width: 240px;
+    outline: none;
   }
 
   .close {
