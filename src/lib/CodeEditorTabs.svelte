@@ -14,6 +14,11 @@
 
   let tabs = $derived(repo.list(pageId));
   let content = $derived(active ? repo.get(pageId, active) : "");
+  
+  $effect(() => {
+    tabs;
+    active = "";
+  });
 
   $effect(() => {
     if (tabs.length === 0) {
@@ -278,7 +283,7 @@
     overflow: hidden;
   }
 
-  .tab[data-active="true"] { background: #eee; }
+  .tab[data-active="true"] { font-size: 18px; font-weight: 700; }
 
   .tabbtn {
     border: 0;
@@ -289,6 +294,8 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font: inherit;
+    color: inherit;
   }
 
   .rename {
