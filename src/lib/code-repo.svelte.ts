@@ -1,37 +1,46 @@
-import type { PageId, Filename, Pages } from "$lib";
+import type { Lang, PageId, Filename, Pages } from "$lib";
 
-function key(pageId: PageId): string { return `pageCode:${pageId}`; }
+function key(lang: Lang, pageId: PageId): string {
+  return `lang-${lang}-page-${pageId}`;
+}
 
-export function createCodeRepo(defaults: Pages) {
-  let pages = $state<Pages>({});
-  for (const pageId in defaults) {
+export function createCodeRepo(defaults: Pages, getLang: () => Lang ) {
+  let pages = $state<Pages>({ hu: {}, en: {} });
 
-    const raw = localStorage.getItem(key(pageId as PageId));
-    const stored = raw ? JSON.parse(raw) : {};
+  for (const lang of ["hu", "en"] as const) {
+    for (const pageId in defaults[lang]) {
+      const raw = localStorage.getItem(key(lang, pageId as PageId));
+      const stored = (raw ? JSON.parse(raw) : {});
 
-    pages[pageId as PageId] = stored
-      ? { ...defaults[pageId as PageId], ...stored }
-      : { ...defaults[pageId as PageId] };
+      pages[lang][pageId as PageId] = {
+        ...defaults[lang][pageId as PageId],
+        ...stored,
+      };
 
-    for (const fname in stored) {
-      const def = defaults[pageId]?.[fname];
-      const cur = stored[fname];
-      if (def && def.version > cur.version) {
-        pages[pageId][fname] = def;
+      for (const fname in stored) {
+        const def = defaults[lang][pageId as PageId]?.[fname as Filename];
+        const cur = stored[fname];
+        const curVersion = typeof cur?.version === "number" ? cur.version : 0;
+        if (def && def.version > curVersion) {
+          pages[lang][pageId as PageId][fname as Filename] = def;
+        }
       }
     }
   }
 
   function save(pageId: PageId): void {
-    localStorage.setItem(key(pageId), JSON.stringify(pages[pageId]));
+    const lang = getLang();
+    localStorage.setItem(key(lang, pageId), JSON.stringify(pages[lang][pageId]));
   }
 
   function list(pageId: PageId): Filename[] {
-    return Object.keys(pages[pageId]) as Filename[];
+    const lang = getLang();
+    return Object.keys(pages[lang][pageId]) as Filename[];
   }
 
   function get(pageId: PageId, filename: Filename): string {
-    const page = pages[pageId];
+    const lang = getLang();
+    const page = pages[lang][pageId];
     if (!page[filename]) {
       page[filename] = { content: "", version: 0 };
       save(pageId);
@@ -40,22 +49,24 @@ export function createCodeRepo(defaults: Pages) {
   }
 
   function set(pageId: PageId, filename: Filename, content: string): void {
-    const page = pages[pageId];
+    const lang = getLang();
+    const page = pages[lang][pageId];
     const version = page[filename]?.version ?? 0;
     page[filename] = { content, version };
     save(pageId);
   }
 
   function del(pageId: PageId, filename: Filename): void {
-    delete pages[pageId][filename];
+    const lang = getLang();
+    delete pages[lang][pageId][filename];
     save(pageId);
   }
 
   function rename(pageId: PageId, from: Filename, to: Filename): boolean {
+    const lang = getLang();
     if (from === to) return true;
-    const page = pages[pageId];
+    const page = pages[lang][pageId];
     if (!page[from] || page[to]) return false;
-
     page[to] = page[from];
     delete page[from];
     save(pageId);
@@ -63,7 +74,8 @@ export function createCodeRepo(defaults: Pages) {
   }
 
   function reset(pageId: PageId): void {
-    pages[pageId] = { ...defaults[pageId] };
+    const lang = getLang();
+    pages[lang][pageId] = { ...defaults[lang][pageId] };
     save(pageId);
   }
 

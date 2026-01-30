@@ -1,24 +1,37 @@
-import linsrc from "./search/linsrc.py?raw";
-import binsrc from "./search/binsrc.py?raw";
+import type { Pages, Lang } from "$lib";
 
-import bubble from "./sort/bubble.py?raw";
-import insertion from "./sort/insertion.py?raw";
-import merge from "./sort/merge.py?raw";
-import quick from "./sort/quick.py?raw";
-import selection from "./sort/selection.py?raw";
+const rawFiles = import.meta.glob("./{hu,en}/**/*.py", {
+  as: "raw",
+  eager: true,
+}) as Record<string, string>;
 
-import type { PageId, Filename, Pages } from "$lib";
-
-export const defaultCode: Pages = {
-  search: {
-    "linsrc.py": { content: linsrc, version: 1 },
-    "binsrc.py": { content: binsrc, version: 1 },
-  },
-  sort: {
-    "bubble.py": { content: bubble, version: 1 },
-    "insertion.py": { content: insertion, version: 1 },
-    "merge.py": { content: merge, version: 1 },
-    "quick.py": { content: quick, version: 1 },
-    "selection.py": { content: selection, version: 1 },
+function file(lang: Lang, path: string): string {
+  const key = `./${lang}/${path}`;
+  const v = rawFiles[key];
+  if (v === undefined) {
+    throw new Error(`Missing file: ${key}`);
   }
-};
+  return v;
+}
+
+export function loadDefaultCode(): Pages {
+  const res = {} as Pages;
+  for (const lang of ["hu", "en"] as const) {
+    res[lang] = {
+      search: {
+        "linsrc.py": { content: file(lang, "search/linsrc.py"), version: 1},
+        "binsrc.py": { content: file(lang, "search/binsrc.py"), version: 1},
+      },
+      sort: {
+        "bubble.py": { content: file(lang, "sort/bubble.py"), version: 1},
+        "insertion.py": { content: file(lang, "sort/insertion.py"), version: 1},
+        "merge.py": { content: file(lang, "sort/merge.py"), version: 1},
+        "quick.py": { content: file(lang, "sort/quick.py"), version: 1},
+        "selection.py": { content: file(lang, "sort/selection.py"), version: 1},
+      },
+    };
+  }
+  return res;
+}
+
+export const defaultCode: Pages = loadDefaultCode();
