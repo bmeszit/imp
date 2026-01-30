@@ -14,11 +14,6 @@
 
   let tabs = $derived(repo.list(pageId));
   let content = $derived(active ? repo.get(pageId, active) : "");
-  
-  $effect(() => {
-    tabs;
-    active = "";
-  });
 
   $effect(() => {
     if (tabs.length === 0) {
@@ -116,9 +111,50 @@
 <div class="wrap">
   <div class="bar">
     <div class="mobile">
-      <div class="title" title={active || ""}>{active || "No file"}</div>
-      <button class="hamb" type="button" aria-label="Menu" onclick={() => (menuOpen = !menuOpen)}>☰</button>
-    </div>
+        {#if active && renaming === active}
+          <span
+            class="title renameTitle"
+            bind:this={renameEl}
+            contenteditable
+            role="textbox"
+            aria-label="Rename file"
+            aria-multiline="false"
+            tabindex="0"
+            spellcheck="false"
+            onkeydown={(e) => {
+              const el = e.currentTarget as HTMLSpanElement;
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitRename(el.textContent ?? "");
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                cancelRename();
+              }
+            }}
+            onblur={(e) => {
+              const el = e.currentTarget as HTMLSpanElement;
+              commitRename(el.textContent ?? "");
+            }}
+          >
+            {renameValue}
+          </span>
+        {:else}
+          <button
+            class="title titleBtn"
+            type="button"
+            title={active || ""}
+            disabled={!active}
+            onclick={() => {
+              if (active) beginRename(active);
+            }}
+          >
+            {active || "No file"}
+          </button>
+        {/if}
+
+        <button class="hamb" type="button" aria-label="Menu" onclick={() => (menuOpen = !menuOpen)}>☰</button>
+      </div>
 
     <div class="tabs">
       {#each tabs as t (t)}
@@ -177,36 +213,26 @@
         <button class="x" type="button" aria-label="Close" onclick={() => (menuOpen = false)}>×</button>
       </div>
 
-      <div class="menuList">
-        {#each tabs as t (t)}
-          <div class="row" data-active={t === active}>
-            {#if renaming === t}
-              <input
-                class="rename pick"
-                value={renameValue}
-                autofocus
-                oninput={(e) => (renameValue = (e.currentTarget as HTMLInputElement).value)}
-                onkeydown={(e) => {
-                  if (e.key === "Enter") commitRename();
-                  if (e.key === "Escape") cancelRename();
-                }}
-                onblur={commitRename}
-              />
-            {:else}
-              <button
-                class="pick"
-                type="button"
-                onclick={() => (active = t, menuOpen = false)}
-                ondblclick={() => beginRename(t)}
-                oncontextmenu={(e) => onRenameMenu(e, t)}
-              >
-                {t}
-              </button>
-            {/if}
-            <button class="close" type="button" aria-label="Close" onclick={() => closeFile(t)}>×</button>
-          </div>
-        {/each}
+        <div class="menuList">
+    {#each tabs as t (t)}
+      <div class="row" data-active={t === active}>
+        <button
+          class="pick"
+          type="button"
+          disabled={renaming !== ""}
+          onclick={() => {
+            if (renaming) return;
+            active = t;
+            menuOpen = false;
+          }}
+        >
+          {t}
+        </button>
+        <button class="close" type="button" aria-label="Close" onclick={() => closeFile(t)}>×</button>
       </div>
+    {/each}
+  </div>
+
 
       <div class="menuActions">
         <button class="new" type="button" onclick={addFile}>+ New</button>
@@ -323,7 +349,7 @@
     right: 10px;
     z-index: 20;
     border: 1px solid #ddd;
-    background: white;
+    background: #eee;
     border-radius: 12px;
     overflow: hidden;
   }
@@ -404,4 +430,24 @@
     .mobile { display: flex; }
     .desktopOnly { display: none; }
   }
+
+  .titleBtn {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+
+  .titleBtn:disabled {
+    cursor: default;
+  }
+
+  .renameTitle {
+    cursor: text;
+    outline: none;
+  }
+
 </style>
